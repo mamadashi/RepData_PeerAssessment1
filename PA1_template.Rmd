@@ -1,20 +1,142 @@
-# Reproducible Research: Peer Assessment 1
+Activity Monitoring
+===================
+
+# Loading and preprocessing data.
+
+```{r}
+par(mfrow=c(1, 1))
+
+dtx <- read.csv("activity.csv", stringsAsFactors = F)
+dtx$DT <- strptime(dtx$date, format="%Y-%m-%d")
+dtx$WD <- weekdays(dtx$DT, abbreviate=T)
+dx <- dtx[!is.na(dtx$steps),]
+```
+
+# Mean(s) of the total number of steps taken per day
+
+```{r fig.width=10, fig.height=8}
+dx <- dtx[!is.na(dtx$steps),]
+len <- sum(dx$steps)
+d0 <- character(length = len)
+k <- 1L
+for (i in seq(1, nrow(dx))){
+    cc <- dx[i,]
+    if (cc$steps > 0) {
+        for (j in seq(1, cc$steps)) {
+            d0[k] <- cc$date
+            k <- k + 1L
+        }
+    }
+}
+d0 <- strptime(d0, format="%Y-%m-%d")
+hist(d0, breaks="days", format="%Y-%m-%d", col = "red", xlab="Date", 
+     ylab="Number of Steps", main="Number of Steps (per Day)", freq = TRUE)
+```
+
+# Mean(s) and median(s) steps taken per day
+
+```{r}
+dx <- dtx[!is.na(dtx$steps),]
+d1 <- split(dx, factor(as.Date(dx$date, format="%Y-%m-%d")))
+d2 <- data.frame()
+for (c in d1) {
+    d2 <- rbind(d2, data.frame(Date = c[1, "DT"], Mean = mean(c$steps), Median = median(c$steps)))
+}
+d2
+```
+
+# Average daily activity pattern
+
+```{r fig.width=10, fig.height=8}
+dx <- dtx[!is.na(dtx$steps),]
+d1 <- split(dx, factor(dx$interval))
+d3 <- data.frame()
+for (c in d1) {
+    d3 <- rbind(d3, data.frame(Interval = c[1, "interval"], Mean = mean(c$steps)))
+}
+
+plot(d3$Interval, d3$Mean, type ="l", lwd = 3, col="red", main = "Average Steps for 5 Minute Interval", 
+     xlab = "Interval", ylab = "Average steps")
 
 
-## Loading and preprocessing the data
+max_steps <- d3[order(d3$Mean,decreasing=T),][1,]
+mis_count <- sum(is.na(dtx))
+total_count <- nrow(dtx)
+
+```
+
+# Maximum number of step(s) (interval, mean) = `r max_steps`
+
+# Missing count `r  mis_count`
+
+# Total count `r total_count`
+
+# Result(s) of imputing missing values
+
+```{r fig.width=8, fig.height=6}
+dx <- dtx[!is.na(dtx$steps),]
+dx$key <- paste(dx$interval, dx$WD, sep=";")
+d6 <- split(dx, factor(dx$key))
+d7 <- data.frame()
+for (c in d6) {
+    d7 <- rbind(d7, data.frame(key = c[1, "key"], mean = mean(c$steps)))
+}
+
+dy <- dtx[is.na(dtx$steps),]
+dy$key <- paste(dy$interval, dy$WD, sep=";")
+st <- numeric()
+for (i in 1:nrow(dy)) {
+    cc <- dy[i,]
+    st <- c(st, d7[d7$key == paste(cc$interval, cc$WD, sep=";"), "mean"])
+}
+dy$steps <- st     
+
+dtx1 <- rbind(dx, dy)
+
+dx <- dtx1
+len <- sum(dx$steps)
+d0 <- character(length = len)
+k <- 1L
+for (i in seq(1, nrow(dx))){
+    cc <- dx[i,]
+    if (cc$steps > 0) {
+        for (j in seq(1, cc$steps)) {
+            d0[k] <- cc$date
+            k <- k + 1L
+        }
+    }
+}
+d0 <- strptime(d0, format="%Y-%m-%d")
+hist(d0, breaks="days", format="%Y-%m-%d", col = "red", xlab="Date", ylab="Steps", main="Steps per Day", freq = TRUE)
+
+```
 
 
+# Difference in activity patterns between weekdays and weekends
 
-## What is mean total number of steps taken per day?
+```{r fig.width=8, fig.height=12}
+par(mfrow=c(2, 1))
+
+dx <- dtx[!is.na(dtx$steps),]
+
+d0 <- dx[(dx$WD == "вс") | (dx$WD == "сб"), ]
+
+d1 <- split(d0, factor(d0$interval))
+d3 <- data.frame()
+for (c in d1) {
+    d3 <- rbind(d3, data.frame(Interval = c[1, "interval"], Mean = mean(c$steps)))
+}
+plot(d3$Interval, d3$Mean, type ="l", lwd = 1.5, col="red", main = "Weekend", 
+     xlab = "Interval", ylab = "Steps")
+
+d0 <- dx[!((dx$WD == "вс") | (dx$WD == "сб")), ]
+d1 <- split(d0, factor(d0$interval))
+d3 <- data.frame()
+for (c in d1) {
+    d3 <- rbind(d3, data.frame(Interval = c[1, "interval"], Mean = mean(c$steps)))
+}
+plot(d3$Interval, d3$Mean, type ="l", lwd = 1.5, col="red", main = "Weekday", 
+     xlab = "Interval", ylab = "Steps")
+```
 
 
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
